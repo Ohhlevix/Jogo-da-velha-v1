@@ -37,7 +37,7 @@ O jogo funciona de forma intuitiva:
 ## Estrutura
 
 ```
-jogo-da-velha/
+jogo-da-velha-v1/
 ├── index.html    # Apenas arquivo de redirecionamento
 ├── jdv.html      # arauivo base do jogo da velha principal
 └── README.md     # Documentação
