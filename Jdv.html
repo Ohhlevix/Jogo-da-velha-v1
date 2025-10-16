@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Velha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #7B68EE 0%, #4169E1 100%);
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #1a1a4d;
+            margin-bottom: 20px;
+            font-size: 3em;
+            letter-spacing: 3px;
+        }
+
+        .mode-toggle {
+            margin-bottom: 30px;
+        }
+
+        .toggle-btn {
+            background: rgba(173, 216, 230, 0.4);
+            border: 3px solid #1a1a4d;
+            border-radius: 5px;
+            font-size: 1.2em;
+            padding: 10px 25px;
+            cursor: pointer;
+            color: #1a1a4d;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-btn.active {
+            background: rgba(144, 238, 144, 0.6);
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 140px);
+            grid-gap: 15px;
+            margin: 0 auto 40px;
+        }
+
+        .cell {
+            width: 140px;
+            height: 140px;
+            background: rgba(173, 216, 230, 0.3);
+            border: 3px solid #1a1a4d;
+            font-size: 4em;
+            font-weight: bold;
+            color: #1a1a4d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .cell:hover:not(:disabled) {
+            background: rgba(173, 216, 230, 0.5);
+        }
+
+        .info {
+            color: #1a1a4d;
+            font-size: 1.8em;
+            margin-bottom: 30px;
+        }
+
+        .score {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+            font-size: 1.2em;
+        }
+
+        .score-item {
+            padding: 12px 25px;
+            background: rgba(173, 216, 230, 0.3);
+            border: 2px solid #1a1a4d;
+            border-radius: 5px;
+            color: #1a1a4d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JOGO DA VELHA</h1>
+
+        <div class="mode-toggle">
+            <button id="toggleMode" class="toggle-btn">🤖 JOGAR VS MÁQUINA: DESLIGADO</button>
+        </div>
+
+        <div class="board" id="board">
+            <button class="cell" data-index="0"></button>
+            <button class="cell" data-index="1"></button>
+            <button class="cell" data-index="2"></button>
+            <button class="cell" data-index="3"></button>
+            <button class="cell" data-index="4"></button>
+            <button class="cell" data-index="5"></button>
+            <button class="cell" data-index="6"></button>
+            <button class="cell" data-index="7"></button>
+            <button class="cell" data-index="8"></button>
+        </div>
+
+        <div class="info" id="info">JOGADOR DA VEZ: X</div>
+
+        <div class="score">
+            <div class="score-item">VOCÊ/X: <span id="scoreYou">0</span></div>
+            <div class="score-item">EMPATES: <span id="scoreDraw">0</span></div>
+            <div class="score-item">MÁQUINA/O: <span id="scoreMachine">0</span></div>
+        </div>
+
+        <div class="controls">
+            <button class="toggle-btn" onclick="resetGame()">REINICIAR</button>
+        </div>
+    </div>
+
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const info = document.getElementById('info');
+        const toggleBtn = document.getElementById('toggleMode');
+        const board = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+        let vsMachine = false;
+        let currentPlayer = 'X';
+        let scores = { you: 0, machine: 0, draw: 0 };
+
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        toggleBtn.addEventListener('click', () => {
+            vsMachine = !vsMachine;
+            toggleBtn.textContent = vsMachine ? '🤖 JOGAR VS MÁQUINA: LIGADO' : '🤖 JOGAR VS MÁQUINA: DESLIGADO';
+            toggleBtn.classList.toggle('active', vsMachine);
+            resetGame();
+        });
+
+        cells.forEach(cell => cell.addEventListener('click', () => handleCellClick(cell)));
+
+        function handleCellClick(cell) {
+            const index = cell.getAttribute('data-index');
+            if (board[index] !== '' || !gameActive) return;
+
+            makeMove(index, currentPlayer, cell);
+
+            if (gameActive) {
+                if (vsMachine) {
+                    setTimeout(() => { if (gameActive) machineMove(); }, 600);
+                } else {
+                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    info.textContent = 'JOGADOR DA VEZ: ' + currentPlayer;
+                }
+            }
+        }
+
+        function makeMove(index, player, cell) {
+            board[index] = player;
+            cell.textContent = player;
+            cell.disabled = true;
+            checkResult();
+        }
+
+        function machineMove() {
+            info.textContent = 'MÁQUINA JOGANDO...';
+            let move = findBestMove();
+            const cell = document.querySelector(`[data-index="${move}"]`);
+            makeMove(move, 'O', cell);
+            if (gameActive) info.textContent = 'JOGADOR DA VEZ: X';
+        }
+
+        function findBestMove() {
+            const available = board.map((v, i) => v === '' ? i : null).filter(v => v !== null);
+            return available[Math.floor(Math.random() * available.length)];
+        }
+
+        function checkResult() {
+            let winner = null;
+            for (let [a, b, c] of winPatterns) {
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    winner = board[a];
+                    break;
+                }
+            }
+
+            if (winner) {
+                gameActive = false;
+                if (winner === 'X') {
+                    info.textContent = 'JOGADOR X VENCEU!';
+                    scores.you++;
+                    document.getElementById('scoreYou').textContent = scores.you;
+                } else {
+                    info.textContent = vsMachine ? 'MÁQUINA VENCEU!' : 'JOGADOR O VENCEU!';
+                    scores.machine++;
+                    document.getElementById('scoreMachine').textContent = scores.machine;
+                }
+                cells.forEach(c => c.disabled = true);
+                return;
+            }
+
+            if (!board.includes('')) {
+                gameActive = false;
+                info.textContent = 'EMPATE!';
+                scores.draw++;
+                document.getElementById('scoreDraw').textContent = scores.draw;
+            }
+        }
+
+        function resetGame() {
+            board.fill('');
+            gameActive = true;
+            currentPlayer = 'X';
+            info.textContent = 'JOGADOR DA VEZ: X';
+            cells.forEach(c => { c.textContent = ''; c.disabled = false; });
+        }
+    </script>
+</body>
+  </html>
+  
